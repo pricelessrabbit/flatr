@@ -3,11 +3,23 @@ package flat
 import "strconv"
 
 type Flatter struct {
-	stack stack[entry]
+	stack       *stack[entry]
+	prefix      string
+	separator   string
+	trasformers map[string]Trasformer
 }
 
-func New() *Flatter {
-	return &Flatter{}
+func New(options ...Option) *Flatter {
+	f := &Flatter{
+		stack:       &stack[entry]{},
+		prefix:      "",
+		separator:   ".",
+		trasformers: make(map[string]Trasformer),
+	}
+	for _, opt := range options {
+		opt(f)
+	}
+	return f
 }
 
 type entry struct {
@@ -16,29 +28,35 @@ type entry struct {
 }
 
 func (f *Flatter) Flat(toFlat any) map[string]any {
-	s := &stack[entry]{}
+
 	flatted := make(map[string]any)
 
-	s.push(entry{k: "", v: toFlat})
+	f.stack.push(entry{k: f.prefix, v: toFlat})
 
-	for !s.empty() {
-		e := s.pop()
-		flatmapNode(e.k, e.v, flatted, s)
+	for !f.stack.empty() {
+		e := f.stack.pop()
+		f.flatmapNode(e.k, e.v, flatted)
 	}
 	return flatted
 }
 
-func flatmapNode(rootKey string, toFlat any, flatted map[string]any, stack *stack[entry]) {
+func (f *Flatter) flatmapNode(rootKey string, toFlat any, flatted map[string]any) {
+
+	fn, ok := f.trasformers[rootKey]
+	if ok {
+		toFlat = fn(toFlat)
+	}
+
 	switch toFlat.(type) {
 	case map[string]any:
 		for k, m := range toFlat.(map[string]any) {
-			nodeKey := joinKey(rootKey, k, ".")
-			stack.push(entry{k: nodeKey, v: m.(any)})
+			nodeKey := joinKey(rootKey, k, f.separator)
+			f.stack.push(entry{k: nodeKey, v: m.(any)})
 		}
 	case []any:
 		for i, v := range toFlat.([]any) {
 			nodeKey := joinKey(rootKey, strconv.Itoa(i), ".")
-			stack.push(entry{k: nodeKey, v: v.(any)})
+			f.stack.push(entry{k: nodeKey, v: v.(any)})
 		}
 	default:
 		flatted[rootKey] = toFlat
