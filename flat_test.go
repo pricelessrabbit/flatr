@@ -19,17 +19,28 @@ func TestStruct(t *testing.T) {
 	assert.Equal(t, toTest, flatted[""])
 }
 
+func TestNil(t *testing.T) {
+	toTest := map[string]any{
+		"foo":  "bar",
+		"nest": nil,
+	}
+	f := New()
+	flatted := f.Flat(toTest)
+	_, ok := flatted["nest"]
+	assert.Equal(t, false, ok)
+}
+
 func TestMap(t *testing.T) {
 	toTest := map[string]any{
-		"a": "a",
+		"foo": "bar",
 		"nest": map[string]any{
-			"b": "b",
+			"bar": "baz",
 		},
 	}
 	f := New()
 	flatted := f.Flat(toTest)
-	assert.Equal(t, "a", flatted["a"])
-	assert.Equal(t, "b", flatted["nest.b"])
+	assert.Equal(t, "bar", flatted["foo"])
+	assert.Equal(t, "baz", flatted["nest.bar"])
 }
 
 func TestArray(t *testing.T) {
@@ -62,11 +73,14 @@ func TestMapWithNestedArray(t *testing.T) {
 
 func TestPrefixOption(t *testing.T) {
 	toTest := map[string]any{
-		"foo": "bar",
+		"foo": "baz",
+		"bar": []any{"foobar", "foobaz"},
 	}
 	f := New(WithPrefix("pre"))
 	flatted := f.Flat(toTest)
 	assert.Equal(t, "bar", flatted["pre.foo"])
+	assert.Equal(t, "foobar", flatted["pre.bar.0"])
+	assert.Equal(t, "foobaz", flatted["pre.bar.1"])
 }
 
 func TestSeparatorOption(t *testing.T) {
@@ -74,6 +88,7 @@ func TestSeparatorOption(t *testing.T) {
 		"foo": map[string]any{
 			"bar": "baz",
 		},
+		"foobar": []any{"foobaz", "foozoof"},
 	}
 	f := New(WithSeparator("-"))
 	flatted := f.Flat(toTest)
@@ -95,7 +110,7 @@ func TestTransformer(t *testing.T) {
 	assert.Equal(t, "baz_transformed", flatted["foo.bar"])
 }
 
-func TestKeyOverIndex(t *testing.T) {
+func TestUseFieldAsIndex(t *testing.T) {
 	toTest := map[string]any{
 		"foo": []any{
 			map[string]any{"id": "a", "data": 10},
