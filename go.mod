@@ -1,4 +1,4 @@
-module flat
+module github.com/pricelessrabbit/flat
 
 go 1.18
 
