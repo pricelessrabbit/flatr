@@ -57,7 +57,7 @@ func (f *Flatter) flatmapNode(rootKey string, toFlat any, flatted map[string]any
 		}
 	case []any:
 		for i, v := range toFlat.([]any) {
-			nodeKey := joinKey(rootKey, strconv.Itoa(i), ".")
+			nodeKey := joinKey(rootKey, strconv.Itoa(i), f.separator)
 			f.stack.push(entry{k: nodeKey, v: v})
 		}
 	default:

@@ -88,11 +88,13 @@ func TestSeparatorOption(t *testing.T) {
 		"foo": map[string]any{
 			"bar": "baz",
 		},
-		"foobar": []any{"foobaz", "foozoof"},
+		"foobar": []any{"foobaz", "foobuz"},
 	}
 	f := New(WithSeparator("-"))
 	flatted := f.Flat(toTest)
 	assert.Equal(t, "baz", flatted["foo-bar"])
+	assert.Equal(t, "foobaz", flatted["foobar-0"])
+	assert.Equal(t, "foobuz", flatted["foobar-1"])
 }
 
 func TestTransformer(t *testing.T) {
