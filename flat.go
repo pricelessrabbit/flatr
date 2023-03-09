@@ -1,4 +1,4 @@
-package flat
+package flatr
 
 import "strconv"
 

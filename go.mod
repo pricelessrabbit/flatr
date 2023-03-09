@@ -1,4 +1,4 @@
-module github.com/pricelessrabbit/flat
+module github.com/pricelessrabbit/flatr
 
 go 1.18
 

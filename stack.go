@@ -1,4 +1,4 @@
-package flat
+package flatr
 
 type stack[T any] struct {
 	entries []T
