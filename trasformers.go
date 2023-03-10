@@ -2,11 +2,11 @@ package flatr
 
 import "fmt"
 
-type Trasformer func(any) any
+type Trasformer func(entry) entry
 
 func UseFieldAsIndex(idKey string) Trasformer {
-	return func(n any) any {
-		elements, ok := n.([]any)
+	return func(e entry) entry {
+		elements, ok := e.v.([]any)
 		if !ok {
 			panic("UseFieldAsIndex support only slices of objects")
 		}
@@ -19,6 +19,7 @@ func UseFieldAsIndex(idKey string) Trasformer {
 			}
 			transformed[keyValue] = element
 		}
-		return transformed
+		e.v = transformed
+		return e
 	}
 }

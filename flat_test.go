@@ -27,7 +27,7 @@ func TestNil(t *testing.T) {
 	f := New()
 	flatted := f.Flat(toTest)
 	_, ok := flatted["nest"]
-	assert.Equal(t, false, ok)
+	assert.Equal(t, true, ok)
 }
 
 func TestMap(t *testing.T) {
@@ -103,8 +103,9 @@ func TestTransformer(t *testing.T) {
 			"bar": "baz",
 		},
 	}
-	trasformer := func(v any) any {
-		return v.(string) + "_transformed"
+	trasformer := func(e entry) entry {
+		e.v = e.v.(string) + "_transformed"
+		return e
 	}
 
 	f := New(AddTransformer("foo.bar", trasformer))

@@ -14,7 +14,7 @@ func WithSeparator(separator string) Option {
 	}
 }
 
-func AddTransformer(key string, fn func(node any) any) Option {
+func AddTransformer(key string, fn Trasformer) Option {
 	return func(f *Flatter) {
 		f.trasformers[key] = fn
 	}

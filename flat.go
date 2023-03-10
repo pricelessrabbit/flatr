@@ -23,45 +23,46 @@ func New(options ...Option) *Flatter {
 }
 
 type entry struct {
-	k string
-	v any
+	k    string
+	v    any
+	h    int
+	stop bool
 }
 
 func (f *Flatter) Flat(toFlat any) map[string]any {
 
 	flatted := make(map[string]any)
 
-	f.stack.push(entry{k: f.prefix, v: toFlat})
+	f.stack.push(entry{k: f.prefix, v: toFlat, h: 0, stop: false})
 
 	for !f.stack.empty() {
 		e := f.stack.pop()
-		f.flatmapNode(e.k, e.v, flatted)
+		fn, ok := f.trasformers[e.k]
+		if ok {
+			e = fn(e)
+		}
+		f.flatmapNode(e, flatted)
 	}
 	return flatted
 }
 
-func (f *Flatter) flatmapNode(rootKey string, toFlat any, flatted map[string]any) {
-
-	fn, ok := f.trasformers[rootKey]
-	if ok {
-		toFlat = fn(toFlat)
-	}
-	if toFlat == nil {
+func (f *Flatter) flatmapNode(e entry, flatted map[string]any) {
+	if e.stop == true {
 		return
 	}
-	switch toFlat.(type) {
+	switch e.v.(type) {
 	case map[string]any:
-		for k, m := range toFlat.(map[string]any) {
-			nodeKey := joinKey(rootKey, k, f.separator)
+		for k, m := range e.v.(map[string]any) {
+			nodeKey := joinKey(e.k, k, f.separator)
 			f.stack.push(entry{k: nodeKey, v: m})
 		}
 	case []any:
-		for i, v := range toFlat.([]any) {
-			nodeKey := joinKey(rootKey, strconv.Itoa(i), f.separator)
+		for i, v := range e.v.([]any) {
+			nodeKey := joinKey(e.k, strconv.Itoa(i), f.separator)
 			f.stack.push(entry{k: nodeKey, v: v})
 		}
 	default:
-		flatted[rootKey] = toFlat
+		flatted[e.k] = e.v
 	}
 }
 
