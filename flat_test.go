@@ -1,6 +1,7 @@
 package flatr
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -8,15 +9,17 @@ import (
 func TestScalar(t *testing.T) {
 	toTest := 2
 	f := New()
-	flatted := f.Flat(toTest)
+	flatted, err := f.Flat(toTest)
 	assert.Equal(t, 2, flatted[""])
+	assert.Nil(t, err)
 }
 
 func TestStruct(t *testing.T) {
 	toTest := &struct{ foo int }{foo: 1}
 	f := New()
-	flatted := f.Flat(toTest)
+	flatted, err := f.Flat(toTest)
 	assert.Equal(t, toTest, flatted[""])
+	assert.Nil(t, err)
 }
 
 func TestNil(t *testing.T) {
@@ -25,9 +28,10 @@ func TestNil(t *testing.T) {
 		"nest": nil,
 	}
 	f := New()
-	flatted := f.Flat(toTest)
+	flatted, err := f.Flat(toTest)
 	_, ok := flatted["nest"]
 	assert.Equal(t, true, ok)
+	assert.Nil(t, err)
 }
 
 func TestMap(t *testing.T) {
@@ -38,9 +42,10 @@ func TestMap(t *testing.T) {
 		},
 	}
 	f := New()
-	flatted := f.Flat(toTest)
+	flatted, err := f.Flat(toTest)
 	assert.Equal(t, "bar", flatted["foo"])
 	assert.Equal(t, "baz", flatted["nest.bar"])
+	assert.Nil(t, err)
 }
 
 func TestArray(t *testing.T) {
@@ -52,10 +57,11 @@ func TestArray(t *testing.T) {
 		"bar",
 	}
 	f := New()
-	flatted := f.Flat(toTest)
+	flatted, err := f.Flat(toTest)
 	assert.Equal(t, "bar", flatted["0.foo"])
 	assert.Equal(t, 2, flatted["1"])
 	assert.Equal(t, "bar", flatted["2"])
+	assert.Nil(t, err)
 }
 
 func TestMapWithNestedArray(t *testing.T) {
@@ -65,10 +71,11 @@ func TestMapWithNestedArray(t *testing.T) {
 	}
 
 	f := New()
-	flatted := f.Flat(toTest)
+	flatted, err := f.Flat(toTest)
 	assert.Equal(t, 1, flatted["foo.0"])
 	assert.Equal(t, 2, flatted["foo.1"])
 	assert.Equal(t, 3, flatted["foo.2"])
+	assert.Nil(t, err)
 }
 
 func TestPrefixOption(t *testing.T) {
@@ -77,10 +84,11 @@ func TestPrefixOption(t *testing.T) {
 		"bar": []any{"foobar", "foobaz"},
 	}
 	f := New(WithPrefix("pre"))
-	flatted := f.Flat(toTest)
-	assert.Equal(t, "bar", flatted["pre.foo"])
+	flatted, err := f.Flat(toTest)
+	assert.Equal(t, "baz", flatted["pre.foo"])
 	assert.Equal(t, "foobar", flatted["pre.bar.0"])
 	assert.Equal(t, "foobaz", flatted["pre.bar.1"])
+	assert.Nil(t, err)
 }
 
 func TestSeparatorOption(t *testing.T) {
@@ -91,10 +99,11 @@ func TestSeparatorOption(t *testing.T) {
 		"foobar": []any{"foobaz", "foobuz"},
 	}
 	f := New(WithSeparator("-"))
-	flatted := f.Flat(toTest)
+	flatted, err := f.Flat(toTest)
 	assert.Equal(t, "baz", flatted["foo-bar"])
 	assert.Equal(t, "foobaz", flatted["foobar-0"])
 	assert.Equal(t, "foobuz", flatted["foobar-1"])
+	assert.Nil(t, err)
 }
 
 func TestTransformer(t *testing.T) {
@@ -103,14 +112,29 @@ func TestTransformer(t *testing.T) {
 			"bar": "baz",
 		},
 	}
-	trasformer := func(e entry) entry {
+	trasformer := func(e entry) (entry, error) {
 		e.v = e.v.(string) + "_transformed"
-		return e
+		return e, nil
 	}
 
-	f := New(AddTransformer("foo.bar", trasformer))
-	flatted := f.Flat(toTest)
+	f := New(AddScopedTransformer("foo.bar", trasformer))
+	flatted, err := f.Flat(toTest)
 	assert.Equal(t, "baz_transformed", flatted["foo.bar"])
+	assert.Nil(t, err)
+}
+
+func TestTransformerError(t *testing.T) {
+	toTest := map[string]any{
+		"foo": "bar",
+	}
+	trasformer := func(e entry) (entry, error) {
+		e.v = e.v.(string) + "_transformed"
+		return e, fmt.Errorf("error")
+	}
+	f := New(AddScopedTransformer("foo", trasformer))
+	flatted, err := f.Flat(toTest)
+	assert.Nil(t, flatted["foo"])
+	assert.Equal(t, "error", err.Error())
 }
 
 func TestUseFieldAsIndex(t *testing.T) {
@@ -125,10 +149,11 @@ func TestUseFieldAsIndex(t *testing.T) {
 		},
 	}
 	f := New(
-		AddTransformer("foo", UseFieldAsIndex("id")),
-		AddTransformer("bar", UseFieldAsIndex("id")),
+		AddScopedTransformer("foo", UseFieldAsIndex("id")),
+		AddScopedTransformer("bar", UseFieldAsIndex("id")),
 	)
-	flatted := f.Flat(toTest)
+	flatted, err := f.Flat(toTest)
 	assert.Equal(t, 30, flatted["bar.1.data"])
 	assert.Equal(t, 40, flatted["bar.2.data"])
+	assert.Nil(t, err)
 }

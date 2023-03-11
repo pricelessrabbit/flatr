@@ -13,9 +13,3 @@ func WithSeparator(separator string) Option {
 		f.separator = separator
 	}
 }
-
-func AddTransformer(key string, fn Trasformer) Option {
-	return func(f *Flatter) {
-		f.trasformers[key] = fn
-	}
-}

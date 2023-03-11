@@ -3,18 +3,18 @@ package flatr
 import "strconv"
 
 type Flatter struct {
-	stack       *stack[entry]
-	prefix      string
-	separator   string
-	trasformers map[string]Trasformer
+	stack             *stack[entry]
+	prefix            string
+	separator         string
+	scopedTrasformers map[string]Trasformer
 }
 
 func New(options ...Option) *Flatter {
 	f := &Flatter{
-		stack:       &stack[entry]{},
-		prefix:      "",
-		separator:   ".",
-		trasformers: make(map[string]Trasformer),
+		stack:             &stack[entry]{},
+		prefix:            "",
+		separator:         ".",
+		scopedTrasformers: make(map[string]Trasformer),
 	}
 	for _, opt := range options {
 		opt(f)
@@ -29,21 +29,30 @@ type entry struct {
 	stop bool
 }
 
-func (f *Flatter) Flat(toFlat any) map[string]any {
+func AddScopedTransformer(key string, fn Trasformer) Option {
+	return func(f *Flatter) {
+		f.scopedTrasformers[key] = fn
+	}
+}
 
+func (f *Flatter) Flat(toFlat any) (map[string]any, error) {
+	var err error
 	flatted := make(map[string]any)
 
 	f.stack.push(entry{k: f.prefix, v: toFlat, h: 0, stop: false})
 
 	for !f.stack.empty() {
 		e := f.stack.pop()
-		fn, ok := f.trasformers[e.k]
+		fn, ok := f.scopedTrasformers[e.k]
 		if ok {
-			e = fn(e)
+			e, err = fn(e)
+		}
+		if err != nil {
+			return flatted, err
 		}
 		f.flatmapNode(e, flatted)
 	}
-	return flatted
+	return flatted, nil
 }
 
 func (f *Flatter) flatmapNode(e entry, flatted map[string]any) {
