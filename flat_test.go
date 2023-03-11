@@ -111,15 +111,40 @@ func TestTransformer(t *testing.T) {
 		"foo": map[string]any{
 			"bar": "baz",
 		},
+		"faa": map[string]any{
+			"bar": "baz",
+		},
 	}
-	trasformer := func(e entry) (entry, error) {
-		e.v = e.v.(string) + "_transformed"
+	trasformer := func(e Entry) (Entry, error) {
+		if s, ok := e.V.(string); ok {
+			e.V = s + "_transformed"
+		}
 		return e, nil
 	}
+	f := New(AddTransformer(trasformer))
+	flatted, err := f.Flat(toTest)
+	assert.Equal(t, "baz_transformed", flatted["foo.bar"])
+	assert.Equal(t, "baz_transformed", flatted["faa.bar"])
+	assert.Nil(t, err)
+}
 
+func TestScopedTransformer(t *testing.T) {
+	toTest := map[string]any{
+		"foo": map[string]any{
+			"bar": "baz",
+		},
+		"faa": map[string]any{
+			"bar": "baz",
+		},
+	}
+	trasformer := func(e Entry) (Entry, error) {
+		e.V = e.V.(string) + "_transformed"
+		return e, nil
+	}
 	f := New(AddScopedTransformer("foo.bar", trasformer))
 	flatted, err := f.Flat(toTest)
 	assert.Equal(t, "baz_transformed", flatted["foo.bar"])
+	assert.Equal(t, "baz", flatted["faa.bar"])
 	assert.Nil(t, err)
 }
 
@@ -127,8 +152,8 @@ func TestTransformerError(t *testing.T) {
 	toTest := map[string]any{
 		"foo": "bar",
 	}
-	trasformer := func(e entry) (entry, error) {
-		e.v = e.v.(string) + "_transformed"
+	trasformer := func(e Entry) (Entry, error) {
+		e.V = e.V.(string) + "_transformed"
 		return e, fmt.Errorf("error")
 	}
 	f := New(AddScopedTransformer("foo", trasformer))

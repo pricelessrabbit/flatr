@@ -25,3 +25,23 @@ func TestUseFieldAsIndex(t *testing.T) {
 	assert.Equal(t, 40, flatted["bar.2.data"])
 	assert.Nil(t, err)
 }
+
+func TestMaxDeep(t *testing.T) {
+	toTest := map[string]any{
+		"foo": []any{
+			map[string]any{"id": "a", "data": 10},
+			map[string]any{"id": "b", "data": 20},
+		},
+		"bar": []any{
+			map[string]any{"id": 1, "data": 30},
+			map[string]any{"id": 2, "data": 40},
+		},
+	}
+	f := New(
+		AddTransformer(MaxDeep(2)),
+	)
+	flatted, err := f.Flat(toTest)
+	assert.Equal(t, map[string]any{"id": "a", "data": 10}, flatted["foo.0"])
+	assert.Nil(t, flatted["foo.0.id"])
+	assert.Nil(t, err)
+}

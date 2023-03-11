@@ -3,18 +3,19 @@ package flatr
 import "strconv"
 
 type Flatter struct {
-	stack             *stack[entry]
+	stack             *stack[Entry]
 	prefix            string
 	separator         string
-	scopedTrasformers map[string]Trasformer
+	transformers      []Transformer
+	scopedTrasformers map[string]Transformer
 }
 
 func New(options ...Option) *Flatter {
 	f := &Flatter{
-		stack:             &stack[entry]{},
+		stack:             &stack[Entry]{},
 		prefix:            "",
 		separator:         ".",
-		scopedTrasformers: make(map[string]Trasformer),
+		scopedTrasformers: make(map[string]Transformer),
 	}
 	for _, opt := range options {
 		opt(f)
@@ -22,31 +23,23 @@ func New(options ...Option) *Flatter {
 	return f
 }
 
-type entry struct {
-	k    string
-	v    any
-	h    int
-	stop bool
-}
-
-func AddScopedTransformer(key string, fn Trasformer) Option {
-	return func(f *Flatter) {
-		f.scopedTrasformers[key] = fn
-	}
+type Entry struct {
+	K    string
+	V    any
+	H    int
+	Stop bool
 }
 
 func (f *Flatter) Flat(toFlat any) (map[string]any, error) {
 	var err error
 	flatted := make(map[string]any)
 
-	f.stack.push(entry{k: f.prefix, v: toFlat, h: 0, stop: false})
+	f.stack.push(Entry{K: f.prefix, V: toFlat, H: 0, Stop: false})
 
 	for !f.stack.empty() {
 		e := f.stack.pop()
-		fn, ok := f.scopedTrasformers[e.k]
-		if ok {
-			e, err = fn(e)
-		}
+
+		e, err = f.transformEntry(e, err)
 		if err != nil {
 			return flatted, err
 		}
@@ -55,23 +48,39 @@ func (f *Flatter) Flat(toFlat any) (map[string]any, error) {
 	return flatted, nil
 }
 
-func (f *Flatter) flatmapNode(e entry, flatted map[string]any) {
-	if e.stop == true {
+func (f *Flatter) transformEntry(e Entry, err error) (Entry, error) {
+	transformers := f.transformers
+	fn, ok := f.scopedTrasformers[e.K]
+	if ok {
+		transformers = append(transformers, fn)
+	}
+	for _, fn := range transformers {
+		e, err = fn(e)
+		if err != nil {
+			return e, err
+		}
+	}
+	return e, nil
+}
+
+func (f *Flatter) flatmapNode(e Entry, flatted map[string]any) {
+	if e.Stop == true {
+		flatted[e.K] = e.V
 		return
 	}
-	switch e.v.(type) {
+	switch e.V.(type) {
 	case map[string]any:
-		for k, m := range e.v.(map[string]any) {
-			nodeKey := joinKey(e.k, k, f.separator)
-			f.stack.push(entry{k: nodeKey, v: m})
+		for k, m := range e.V.(map[string]any) {
+			nodeKey := joinKey(e.K, k, f.separator)
+			f.stack.push(Entry{K: nodeKey, V: m, H: e.H + 1})
 		}
 	case []any:
-		for i, v := range e.v.([]any) {
-			nodeKey := joinKey(e.k, strconv.Itoa(i), f.separator)
-			f.stack.push(entry{k: nodeKey, v: v})
+		for i, v := range e.V.([]any) {
+			nodeKey := joinKey(e.K, strconv.Itoa(i), f.separator)
+			f.stack.push(Entry{K: nodeKey, V: v, H: e.H + 1})
 		}
 	default:
-		flatted[e.k] = e.v
+		flatted[e.K] = e.V
 	}
 }
 
