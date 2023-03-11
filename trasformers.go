@@ -2,8 +2,11 @@ package flatr
 
 import "fmt"
 
+// Transformer custom function called by Flatter to preprocess nodes
 type Transformer func(Entry) (Entry, error)
 
+// UseFieldAsIndex applied to a list of maps, uses list element field as the list index.
+// the list is transformed in a map with the choosen field as key and the element as value
 func UseFieldAsIndex(idKey string) Transformer {
 	return func(e Entry) (Entry, error) {
 		elements, ok := e.V.([]any)
@@ -24,6 +27,8 @@ func UseFieldAsIndex(idKey string) Transformer {
 	}
 }
 
+// MaxDeep add a limit to the maximum tree-height of an entry to be processed
+// if the height exceeds the limit the flattening stops and node is saved unflatted
 func MaxDeep(h int) Transformer {
 	return func(e Entry) (Entry, error) {
 		if e.H >= h {

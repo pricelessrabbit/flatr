@@ -1,5 +1,6 @@
 package flatr
 
+// stack basic stack implementation used by flatter to store intermediate entries
 type stack[T any] struct {
 	entries []T
 }

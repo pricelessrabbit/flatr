@@ -2,6 +2,7 @@ package flatr
 
 import "strconv"
 
+// Flatter keep memory of options and transformers to flatten maps
 type Flatter struct {
 	stack             *stack[Entry]
 	prefix            string
@@ -10,6 +11,11 @@ type Flatter struct {
 	scopedTrasformers map[string]Transformer
 }
 
+// New instantiate new flatter with provided options
+// WithPrefix option add a prefix to keys
+// WithSeparator option change default separator
+// AddTransformer and AddScopedTransformer add custom transfomers that apply
+// a custom function to each entry before processing it
 func New(options ...Option) *Flatter {
 	f := &Flatter{
 		stack:             &stack[Entry]{},
@@ -23,6 +29,9 @@ func New(options ...Option) *Flatter {
 	return f
 }
 
+// Entry keep intermediate structure when flatten is ongoing and is passed to transformers
+// tracked data include key and value of the node, height in the tree and if process have to
+// stop without processing children nodes
 type Entry struct {
 	K    string
 	V    any
@@ -30,6 +39,8 @@ type Entry struct {
 	Stop bool
 }
 
+// Flat flatten a nested data structure (scalar, maps and slices) to a flat map.
+// returns a map of 1 level when key is the full path of the field divided by a separator (default to .)
 func (f *Flatter) Flat(toFlat any) (map[string]any, error) {
 	var err error
 	flatted := make(map[string]any)
