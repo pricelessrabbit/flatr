@@ -161,3 +161,32 @@ func TestTransformerError(t *testing.T) {
 	assert.Nil(t, flatted["foo"])
 	assert.Equal(t, "error", err.Error())
 }
+
+func TestCustomTranformer(t *testing.T) {
+	toFlat := map[string]any{
+		"foo": "bar",
+		"nest": map[string]any{
+			"bar": "baz",
+		},
+		"list": []any{
+			map[string]any{
+				"id":   1,
+				"data": "data1",
+			},
+			map[string]any{
+				"id":   2,
+				"data": "data2",
+			},
+		},
+	}
+	trasformer := func(e Entry) (Entry, error) {
+		if s, ok := e.V.(string); ok {
+			e.V = s + "_transformed"
+		}
+		return e, nil
+	}
+	f := New(AddTransformer(trasformer))
+	flatted, _ := f.Flat(toFlat)
+
+	fmt.Printf("%v", flatted)
+}
