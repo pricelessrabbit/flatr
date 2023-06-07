@@ -2,8 +2,8 @@ package flatr
 
 import "strconv"
 
-// Flatter keep memory of options and transformers to flatten maps
-type Flatter struct {
+// Flattener keep memory of options and transformers to flatten maps
+type Flattener struct {
 	stack             *stack[Entry]
 	prefix            string
 	separator         string
@@ -16,8 +16,8 @@ type Flatter struct {
 // WithSeparator option change default separator
 // AddTransformer and AddScopedTransformer add custom transfomers that apply
 // a custom function to each entry before processing it
-func New(options ...Option) *Flatter {
-	f := &Flatter{
+func New(options ...Option) *Flattener {
+	f := &Flattener{
 		stack:             &stack[Entry]{},
 		prefix:            "",
 		separator:         ".",
@@ -41,7 +41,7 @@ type Entry struct {
 
 // Flat flatten a nested data structure (scalar, maps and slices) to a flat map.
 // returns a map of 1 level when key is the full path of the field divided by a separator (default to .)
-func (f *Flatter) Flat(toFlat any) (map[string]any, error) {
+func (f *Flattener) Flat(toFlat any) (map[string]any, error) {
 	var err error
 	flatted := make(map[string]any)
 
@@ -59,7 +59,7 @@ func (f *Flatter) Flat(toFlat any) (map[string]any, error) {
 	return flatted, nil
 }
 
-func (f *Flatter) transformEntry(e Entry, err error) (Entry, error) {
+func (f *Flattener) transformEntry(e Entry, err error) (Entry, error) {
 	transformers := f.transformers
 	fn, ok := f.scopedTrasformers[e.K]
 	if ok {
@@ -74,7 +74,7 @@ func (f *Flatter) transformEntry(e Entry, err error) (Entry, error) {
 	return e, nil
 }
 
-func (f *Flatter) flatmapNode(e Entry, flatted map[string]any) {
+func (f *Flattener) flatmapNode(e Entry, flatted map[string]any) {
 	if e.Stop == true {
 		flatted[e.K] = e.V
 		return

@@ -2,7 +2,7 @@ package flatr
 
 import "fmt"
 
-// Transformer custom function called by Flatter to preprocess nodes
+// Transformer custom function called by Flattener to preprocess nodes
 type Transformer func(Entry) (Entry, error)
 
 // UseFieldAsIndex applied to a list of maps, uses list element field as the list index.
