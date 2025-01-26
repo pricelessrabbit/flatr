@@ -39,7 +39,7 @@ toFlat := map[string]any{
 		},
 	}
 f := flatr.New()
-flatted, err := f.Flat(toFlat)
+flatten, err := f.Flat(toFlat)
 
 
 /* result
@@ -64,7 +64,7 @@ Adds a prefix to all the flatted keys
 
 ```go
 f := New(flatr.WithPrefix("namespace"))
-flatted, _ := f.Flat(toFlat)
+flatten, _ := f.Flat(toFlat)
 
 
 /* result
@@ -87,7 +87,7 @@ Choose path separator (default `.`)
 
 ```go
 f := New(flatr.WithSeparator("_"))
-flatted, _ := f.Flat(toFlat)
+flatten, _ := f.Flat(toFlat)
 
 /* result
 map[
@@ -160,7 +160,7 @@ AddScopedTransformer("foo", UseFieldAsIndex("id")),
 AddScopedTransformer("bar", UseFieldAsIndex("id")),
 )
 
-flatted, _ := f.Flat(toFlat)
+flatten, _ := f.Flat(toFlat)
 
 /*
 map[
@@ -204,7 +204,7 @@ customTransformer := func (e Entry) (Entry, error) {
 }
 
 f := New(AddTransformer(customTransformer))
-flatted, _ := f.Flat(toFlat)
+flatten, _ := f.Flat(toFlat)
 
 /*
 map[
